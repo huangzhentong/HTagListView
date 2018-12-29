@@ -44,7 +44,6 @@ static NSString * const reuseIdentifier = @"tagListViewItemId";
 - (void)setup {
     _selectedTags = [NSMutableArray array];
     _tags = [NSMutableArray array];
-    
     _tagStrokeColor = [UIColor lightGrayColor];
     _tagSelectStrokeColor = _tagStrokeColor;
     _tagBackgroundColor = [UIColor clearColor];
@@ -56,6 +55,37 @@ static NSString * const reuseIdentifier = @"tagListViewItemId";
     _tagCornerRadius = 10.0f;
     
     [self addSubview:self.collectionView];
+}
+-(void)setSectionInsets:(UIEdgeInsets)sectionInsets
+{
+    JCCollectionViewTagFlowLayout *layout = (JCCollectionViewTagFlowLayout *)self.collectionView.collectionViewLayout;
+    if (layout) {
+        layout.sectionInset = sectionInsets;
+    }
+    _sectionInsets  = sectionInsets;
+}
+-(void)setMinimumInteritemSpacing:(CGFloat)minimumInteritemSpacing
+{
+    JCCollectionViewTagFlowLayout *layout = (JCCollectionViewTagFlowLayout *)self.collectionView.collectionViewLayout;
+    if (layout) {
+        layout.minimumInteritemSpacing = minimumInteritemSpacing;
+    }
+    _minimumInteritemSpacing = minimumInteritemSpacing;
+}
+-(CGFloat)minItemWidth
+{
+    if(self.maxItemCount <= 0)
+    {
+        return 0;
+    }
+    else
+    {
+        CGFloat width = CGRectGetWidth(self.frame);
+        
+        width = (width - self.sectionInsets.left - self.sectionInsets.right - (self.maxItemCount-1)*self.minimumInteritemSpacing)/self.maxItemCount;
+        return width;
+        
+    }
 }
 
 
@@ -88,9 +118,36 @@ static NSString * const reuseIdentifier = @"tagListViewItemId";
     self.selectedBlock = completionBlock;
 }
 
+-(id)getTagsOjbectWithIndexPath:(NSIndexPath*)indexPath
+{
+    NSString *text = nil;
+    if ([[self.tags firstObject] isKindOfClass:[NSArray class]]) {
+        text = self.tags[indexPath.section][indexPath.item];
+    }
+    else
+    {
+        text = self.tags[indexPath.item];
+    }
+    return text;
+}
+
+
 #pragma mark - UICollectionViewDelegate | UICollectionViewDataSource
 
+-(NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView
+{
+    if ([[self.tags firstObject] isKindOfClass:[NSArray class]]) {
+        
+        return [self.tags count];
+    }
+    return 1;
+}
+
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
+    if ([[self.tags firstObject] isKindOfClass:[NSArray class]]) {
+        
+        return [self.tags[section] count];
+    }
     return self.tags.count;
 }
 
@@ -98,9 +155,21 @@ static NSString * const reuseIdentifier = @"tagListViewItemId";
     JCCollectionViewTagFlowLayout *layout = (JCCollectionViewTagFlowLayout *)collectionView.collectionViewLayout;
     CGSize maxSize = CGSizeMake(collectionView.frame.size.width - layout.sectionInset.left - layout.sectionInset.right - 20, layout.itemSize.height);
     
-    CGRect frame = [self.tags[indexPath.item] boundingRectWithSize:maxSize options:NSStringDrawingUsesFontLeading|NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName: self.tagTextFont} context:nil];
+    NSString *text = [self getTagsOjbectWithIndexPath:indexPath];
     
-    return CGSizeMake(frame.size.width + 20.0f, frame.size.height + 10.0f);
+    
+    CGRect frame = [text boundingRectWithSize:maxSize options:NSStringDrawingUsesFontLeading|NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName: self.tagTextFont} context:nil];
+    
+    CGFloat width = frame.size.width+20;
+    if ( width <= self.minItemWidth) {
+        width = self.minItemWidth;
+    }
+    CGFloat height = frame.size.height + 10.0f;
+    if ( height <= self.minItemHeigth) {
+        height = self.minItemHeigth;
+    }
+    
+    return CGSizeMake(width, height);
 }
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
@@ -108,11 +177,12 @@ static NSString * const reuseIdentifier = @"tagListViewItemId";
     cell.backgroundColor = self.tagBackgroundColor;
     cell.layer.borderColor = self.tagStrokeColor.CGColor;
     cell.layer.cornerRadius = self.tagCornerRadius;
-    cell.titleLabel.text = self.tags[indexPath.item];
+    
+    cell.titleLabel.text = [self getTagsOjbectWithIndexPath:indexPath];
     cell.titleLabel.textColor = self.tagTextColor;
     cell.titleLabel.font = self.tagTextFont;
     
-    if ([self.selectedTags containsObject:self.tags[indexPath.item]]) {
+    if ([self.selectedTags containsObject:[self getTagsOjbectWithIndexPath:indexPath]]) {
         if(self.selectedTags.count ==1)
         {
             self.currentPath = indexPath;
@@ -135,7 +205,7 @@ static NSString * const reuseIdentifier = @"tagListViewItemId";
                 cell.backgroundColor = self.tagSelectedBackgroundColor;
                 cell.titleLabel.textColor = self.tagSelectedTextColor;
                 
-                [self.selectedTags addObject:self.tags[indexPath.item]];
+                [self.selectedTags addObject:[self getTagsOjbectWithIndexPath:indexPath]];
                 
                 _currentPath  = indexPath;
             }
@@ -150,7 +220,7 @@ static NSString * const reuseIdentifier = @"tagListViewItemId";
                     cell.backgroundColor = self.tagSelectedBackgroundColor;
                     cell.titleLabel.textColor = self.tagSelectedTextColor;
                     cell.layer.borderColor = self.tagSelectStrokeColor.CGColor;
-                    [self.selectedTags addObject:self.tags[indexPath.item]];
+                    [self.selectedTags addObject:[self getTagsOjbectWithIndexPath:indexPath]];
                     _currentPath  = indexPath;
                 }
                 else
@@ -169,23 +239,23 @@ static NSString * const reuseIdentifier = @"tagListViewItemId";
         else
         {
             
-            if ([self.selectedTags containsObject:self.tags[indexPath.item]]) {
+            if ([self.selectedTags containsObject:[self getTagsOjbectWithIndexPath:indexPath]]) {
                 cell.backgroundColor = self.tagBackgroundColor;
                 cell.titleLabel.textColor = self.tagTextColor;
                 cell.layer.borderColor = self.tagStrokeColor.CGColor;
-                [self.selectedTags removeObject:self.tags[indexPath.item]];
+                [self.selectedTags removeObject:[self getTagsOjbectWithIndexPath:indexPath]];
             }
             else {
                 cell.backgroundColor = self.tagSelectedBackgroundColor;
                 cell.titleLabel.textColor = self.tagSelectedTextColor;
                 cell.layer.borderColor = self.tagSelectStrokeColor.CGColor;
-                [self.selectedTags addObject:self.tags[indexPath.item]];
+                [self.selectedTags addObject:[self getTagsOjbectWithIndexPath:indexPath]];
             }
         }
     }
     
     if (self.selectedBlock) {
-        self.selectedBlock(indexPath.item);
+        self.selectedBlock(indexPath);
     }
 }
 
@@ -198,7 +268,8 @@ static NSString * const reuseIdentifier = @"tagListViewItemId";
         _collectionView = [[UICollectionView alloc] initWithFrame:self.bounds collectionViewLayout:layout];
         _collectionView.delegate = self;
         _collectionView.dataSource = self;
-        _collectionView.scrollEnabled = NO;
+        _collectionView.scrollEnabled = true;
+        //        _collectionView.scrollEnabled = NO;
         _collectionView.showsHorizontalScrollIndicator = NO;
         _collectionView.showsVerticalScrollIndicator = NO;
         _collectionView.backgroundColor = [UIColor clearColor];

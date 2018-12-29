@@ -12,7 +12,7 @@
 #import "JCTagCell.h"
 #import "JCCollectionViewTagFlowLayout.h"
 
-typedef void (^JCTagListViewBlock)(NSInteger index);
+typedef void (^JCTagListViewBlock)(NSIndexPath *index);
 
 IB_DESIGNABLE
 @interface JCTagListView : UIView
@@ -32,7 +32,11 @@ IB_DESIGNABLE
 
 @property (nonatomic, strong) NSMutableArray *tags;
 @property (nonatomic, strong) NSMutableArray *selectedTags;
-
+@property (nonatomic) UIEdgeInsets sectionInsets;                     //左右间距
+@property (nonatomic) CGFloat minItemWidth;                           //最小宽度
+@property (nonatomic) CGFloat minItemHeigth;                          //最小宽度
+@property (nonatomic) CGFloat maxItemCount;                          //最大个数
+@property (nonatomic) CGFloat minimumInteritemSpacing;
 @property (nonatomic, strong) UICollectionView *collectionView;
 
 - (void)setCompletionBlockWithSelected:(JCTagListViewBlock)completionBlock;

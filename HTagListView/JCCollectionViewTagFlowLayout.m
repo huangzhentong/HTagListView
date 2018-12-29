@@ -55,28 +55,32 @@
     
     CGFloat originX = self.sectionInset.left;
     CGFloat originY = self.sectionInset.top;
+    CGFloat lastY = self.sectionInset.top;
     
-    NSInteger itemCount = [self.collectionView numberOfItemsInSection:0];
-    
-    for (NSInteger i = 0; i < itemCount; i++) {
-        NSIndexPath *indexPath = [NSIndexPath indexPathForItem:i inSection:0];
-        CGSize itemSize = [self itemSizeForIndexPath:indexPath];
-        
-        if ((originX + itemSize.width + self.sectionInset.right/2) > self.collectionView.frame.size.width) {
-            originX = self.sectionInset.left;
-            originY += itemSize.height + self.minimumLineSpacing;
+    for (NSInteger section =0 ;section< [self.collectionView numberOfSections];section++) {
+        originX = self.sectionInset.left;
+        originY =  lastY;
+        NSInteger itemCount = [self.collectionView numberOfItemsInSection:section];
+        for (NSInteger i = 0; i < itemCount; i++) {
+            NSIndexPath *indexPath = [NSIndexPath indexPathForItem:i inSection:section];
+            CGSize itemSize = [self itemSizeForIndexPath:indexPath];
             
-            self.contentHeight += itemSize.height + self.minimumLineSpacing;
+            if ((originX + itemSize.width + self.sectionInset.right/2) > self.collectionView.frame.size.width) {
+                originX = self.sectionInset.left;
+                originY += itemSize.height + self.minimumLineSpacing;
+                self.contentHeight += itemSize.height + self.minimumLineSpacing;
+            }
+            
+            UICollectionViewLayoutAttributes *attributes = [UICollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
+            attributes.frame = CGRectMake(originX, originY, itemSize.width, itemSize.height);
+            [self.itemAttributes addObject:attributes];
+            
+            originX += itemSize.width + self.minimumInteritemSpacing;
+            lastY = originY + itemSize.height + self.sectionInset.top;
         }
-        
-        UICollectionViewLayoutAttributes *attributes = [UICollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
-        attributes.frame = CGRectMake(originX, originY, itemSize.width, itemSize.height);
-        [self.itemAttributes addObject:attributes];
-        
-        originX += itemSize.width + self.minimumInteritemSpacing;
     }
     
-    self.contentHeight += self.sectionInset.bottom;
+    self.contentHeight = lastY + self.sectionInset.bottom;
 }
 
 - (CGSize)collectionViewContentSize {
@@ -111,41 +115,47 @@
     if ([self.delegate respondsToSelector:@selector(collectionView:layout:sizeForItemAtIndexPath:)]) {
         self.itemSize = [self.delegate collectionView:self.collectionView layout:self sizeForItemAtIndexPath:indexPath];
     }
-   
+    
     return self.itemSize;
 }
 
 - (CGFloat)calculateContentHeight:(NSArray *)tags {
-    CGFloat contentHeight = self.sectionInset.top + self.itemSize.height;
+    self.contentHeight = self.sectionInset.top + self.itemSize.height;
     
     CGFloat originX = self.sectionInset.left;
     CGFloat originY = self.sectionInset.top;
+    CGFloat lastY = self.sectionInset.top;
     
-    for (NSInteger i = 0; i < tags.count; i++) {
-        CGSize maxSize = CGSizeMake([UIScreen mainScreen].bounds.size.width - self.sectionInset.left - self.sectionInset.right, self.itemSize.height);
-        
-        CGRect frame = [tags[i] boundingRectWithSize:maxSize options:NSStringDrawingUsesFontLeading|NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName: self.font?:[UIFont systemFontOfSize:12.0f]} context:nil];
-        
-        CGSize itemSize = CGSizeMake(frame.size.width + 20.0f, self.itemSize.height);
-        
-        if ((originX + itemSize.width + self.sectionInset.right/2) > [UIScreen mainScreen].bounds.size.width) {
-            originX = self.sectionInset.left;
-            originY += itemSize.height + self.minimumLineSpacing;
+    for (NSInteger section =0 ;section< [self.collectionView numberOfSections];section++) {
+        originX = self.sectionInset.left;
+        originY =  lastY;
+        NSInteger itemCount = [self.collectionView numberOfItemsInSection:section];
+        for (NSInteger i = 0; i < itemCount; i++) {
+            NSIndexPath *indexPath = [NSIndexPath indexPathForItem:i inSection:section];
+            CGSize itemSize = [self itemSizeForIndexPath:indexPath];
             
-            contentHeight += itemSize.height + self.minimumLineSpacing;
+            if ((originX + itemSize.width + self.sectionInset.right/2) > self.collectionView.frame.size.width) {
+                originX = self.sectionInset.left;
+                originY += itemSize.height + self.minimumLineSpacing;
+                self.contentHeight += itemSize.height + self.minimumLineSpacing;
+            }
+            
+            UICollectionViewLayoutAttributes *attributes = [UICollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
+            attributes.frame = CGRectMake(originX, originY, itemSize.width, itemSize.height);
+            [self.itemAttributes addObject:attributes];
+            
+            originX += itemSize.width + self.minimumInteritemSpacing;
+            lastY = originY + itemSize.height + self.sectionInset.top;
         }
-        
-        originX += itemSize.width + self.minimumInteritemSpacing;
     }
     
-    contentHeight += self.sectionInset.bottom;
-    
-    return contentHeight;
+    self.contentHeight = lastY + self.sectionInset.bottom;
+    return self.contentHeight;
 }
 + (CGFloat)calculateContentHeight:(NSArray *)tags
 {
     JCCollectionViewTagFlowLayout *layout = [[JCCollectionViewTagFlowLayout alloc] init];
     return [layout calculateContentHeight:tags];
-
+    
 }
 @end
